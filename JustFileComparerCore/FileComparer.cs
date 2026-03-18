@@ -6,33 +6,24 @@ namespace JustFileComparerCore
     {
         delegate Task<bool> FileCompareDelegate(string sourceFilePath, string targetFilePath);
 
-        [Flags]
-        public enum ComparisonMode
-        {
-            None = 0,
-            Size = 1, 
-            Hash = 2, 
-            Bytes = 4
-        }
-
         #region Comparison Methods
 
         public static async Task<bool> AreFilesEqualAsync(string sourceFilePath, string targetFilePath)
-            => await AreFilesEqualAsync(sourceFilePath, targetFilePath, ComparisonMode.Size | ComparisonMode.Hash | ComparisonMode.Bytes);
+            => await AreFilesEqualAsync(sourceFilePath, targetFilePath, FileComparisonMode.Size | FileComparisonMode.Hash | FileComparisonMode.Bytes);
 
         public static async Task<bool> AreFilesEqualBySizeAndHashAsync(string sourceFilePath, string targetFilePath)
-            => await AreFilesEqualAsync(sourceFilePath, targetFilePath, ComparisonMode.Size | ComparisonMode.Hash);
+            => await AreFilesEqualAsync(sourceFilePath, targetFilePath, FileComparisonMode.Size | FileComparisonMode.Hash);
 
-        public static async Task<bool> AreFilesEqualAsync(string sourceFilePath, string targetFilePath, ComparisonMode mode)
+        public static async Task<bool> AreFilesEqualAsync(string sourceFilePath, string targetFilePath, FileComparisonMode mode)
         {
-            if (mode == ComparisonMode.None) return false;
+            if (mode == FileComparisonMode.None) return false;
 
-            return await Check(sourceFilePath, targetFilePath, mode, ComparisonMode.Size, AreFilesEqualBySizeAsync) &&
-                   await Check(sourceFilePath, targetFilePath, mode, ComparisonMode.Hash, AreFilesEqualByHashAsync) &&
-                   await Check(sourceFilePath, targetFilePath, mode, ComparisonMode.Bytes, AreFilesEqualByteByByteAsync);
+            return await Check(sourceFilePath, targetFilePath, mode, FileComparisonMode.Size, AreFilesEqualBySizeAsync) &&
+                   await Check(sourceFilePath, targetFilePath, mode, FileComparisonMode.Hash, AreFilesEqualByHashAsync) &&
+                   await Check(sourceFilePath, targetFilePath, mode, FileComparisonMode.Bytes, AreFilesEqualByteByByteAsync);
         }
 
-        private static async Task<bool> Check(string sourceFilePath, string targetFilePath, ComparisonMode mode, ComparisonMode flag, FileCompareDelegate fileCompare)
+        private static async Task<bool> Check(string sourceFilePath, string targetFilePath, FileComparisonMode mode, FileComparisonMode flag, FileCompareDelegate fileCompare)
         {
             if (mode.HasFlag(flag))
                 return await fileCompare(sourceFilePath, targetFilePath);

@@ -6,6 +6,10 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="JustFileComparer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        WindowStartupLocation="CenterOwner"
+        WindowState="Normal"
+        Height="240"
+        Width="320"
         Icon="/Assets/avalonia-logo.ico"
         Title="JustFileComparer">
 
@@ -15,6 +19,34 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" HorizontalAlignment="Stretch">
+            <Label Content="Source" HorizontalAlignment="Center" />
+            <TextBox Text="{Binding SourceRoot}"  />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1">
+            <Label Content="Target" HorizontalAlignment="Center" />
+            <TextBox Text="{Binding TargetRoot}"  />
+        </StackPanel>
+
+        <Grid Row="2">
+            <Button Content="Compare" HorizontalAlignment="Center"
+                    Command="{Binding Compare}"/>
+        </Grid>
+
+        <StackPanel Grid.Row="4">
+            <TextBlock Text="{Binding Status, Mode=OneWay}" HorizontalAlignment="Center"  />
+        </StackPanel>
+
+    </Grid>
 
 </Window>
