@@ -2,9 +2,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JustFileComparerCore;
+using JustFileComparerCore.Helpers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JustFileComparerCore.FileComparers;
 
 namespace JustFileComparer.ViewModels
 {

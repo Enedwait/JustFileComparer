@@ -1,4 +1,7 @@
-﻿namespace JustFileComparerCore
+﻿using JustFileComparerCore.Extensions;
+using JustFileComparerCore.FileEnumerations;
+
+namespace JustFileComparerCore.FileComparers
 {
     public sealed class FileComparerWorker
     {
@@ -35,8 +38,8 @@
                 comparison = StringComparison.Ordinal;
             }
             
-            if (sourceRoot.IsInside(targetRoot, comparison)) return FileComparerWorkerResult.Error("Source Root should not be inside Target Root");
-            if (targetRoot.IsInside(sourceRoot, comparison)) return FileComparerWorkerResult.Error("Target Root should not be inside Source Root");
+            if (sourceRoot.IsSubPathOf(targetRoot, comparison)) return FileComparerWorkerResult.Error("Source Root should not be inside Target Root");
+            if (targetRoot.IsSubPathOf(sourceRoot, comparison)) return FileComparerWorkerResult.Error("Target Root should not be inside Source Root");
 
             if (maxDegreeOfParallelism == 0) maxDegreeOfParallelism = (uint)Environment.ProcessorCount;
 

@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
-namespace JustFileComparerCore
+namespace JustFileComparerCore.FileEnumerations
 {
     public static class FileEnumerator
     {

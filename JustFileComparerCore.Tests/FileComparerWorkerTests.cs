@@ -1,4 +1,6 @@
-﻿namespace JustFileComparerCore.Tests
+﻿using JustFileComparerCore.FileComparers;
+
+namespace JustFileComparerCore.Tests
 {
     public sealed class FileComparerWorkerTests
     {

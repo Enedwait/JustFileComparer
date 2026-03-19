@@ -1,4 +1,4 @@
-﻿namespace JustFileComparerCore
+﻿namespace JustFileComparerCore.FileComparers
 {
     public struct FileComparison
     {

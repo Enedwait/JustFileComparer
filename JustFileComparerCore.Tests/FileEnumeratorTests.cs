@@ -1,4 +1,6 @@
-﻿namespace JustFileComparerCore.Tests
+﻿using JustFileComparerCore.FileEnumerations;
+
+namespace JustFileComparerCore.Tests
 {
     public sealed class FileEnumeratorTests
     {

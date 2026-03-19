@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace JustFileComparerCore
+namespace JustFileComparerCore.FileComparers
 {
     public sealed class FileComparer
     {

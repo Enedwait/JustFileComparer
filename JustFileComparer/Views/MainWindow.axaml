@@ -34,12 +34,12 @@
         </StackPanel>
 
         <StackPanel Grid.Row="1" Margin="0 5" HorizontalAlignment="Stretch">
-            <Label Content="Source" HorizontalAlignment="Left" />
+            <Label Content="Source Root" HorizontalAlignment="Left" />
             <TextBox Text="{Binding SourceRoot, Mode=TwoWay}"  />
         </StackPanel>
 
         <StackPanel Grid.Row="2" Margin="0 5">
-            <Label Content="Target" HorizontalAlignment="Left" />
+            <Label Content="Target Root" HorizontalAlignment="Left" />
             <TextBox Text="{Binding TargetRoot, Mode=TwoWay}"  />
         </StackPanel>
 

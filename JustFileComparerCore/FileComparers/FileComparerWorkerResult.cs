@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace JustFileComparerCore
+namespace JustFileComparerCore.FileComparers
 {
     public sealed class FileComparerWorkerResult
     {
