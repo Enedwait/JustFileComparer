@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <Title>JustFileComparer</Title>
+    <Authors>Oleg Tolmachev</Authors>
+    <Company>Oleg Tolmachev</Company>
+    <Product>JustFileComparer</Product>
+    <RepositoryUrl>https://github.com/Enedwait/JustFileComparer</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

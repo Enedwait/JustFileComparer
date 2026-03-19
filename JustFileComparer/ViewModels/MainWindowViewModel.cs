@@ -1,8 +1,8 @@
 ﻿using Avalonia.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JustFileComparerCore;
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,18 +12,64 @@ namespace JustFileComparer.ViewModels
     {
         #region Fields
 
-        private string _status;
+        private CancellationTokenSource _compareFilesCancellationTokenSource;
+        private bool _isProcessing;
+        [ObservableProperty] private string _status;
+        [ObservableProperty] private ulong _totalComparisonsCount;
+        [ObservableProperty] private ulong _successfulComparisonsCount;
+        [ObservableProperty] private ulong _failedComparisonsCount;
+        private string _sourceRoot;
+        private string _targetRoot;
 
         #endregion
 
         #region Properties
 
-        public string SourceRoot { get; set; }
-        public string TargetRoot { get; set; }
-        public string Status { get => _status; set => SetProperty(ref _status, value); }
-        public bool IsProcessing { get; private set; }
+        public string AppInfo => $"{AssemblyHelper.Product} [v{AssemblyHelper.Version}] by {AssemblyHelper.Company}";
+
+        public string SourceRoot
+        {
+            get => _sourceRoot;
+            set
+            {
+                if (SetProperty(ref _sourceRoot, value))
+                {
+                    Compare?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        public string TargetRoot
+        {
+            get => _targetRoot;
+            set
+            {
+                if (SetProperty(ref _targetRoot, value))
+                {
+                    Compare?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        public bool IsProcessing
+        {
+            get => _isProcessing;
+            private set
+            {
+                if (SetProperty(ref _isProcessing, value))
+                {
+                    Compare?.NotifyCanExecuteChanged();
+                    CancelCompare?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Commands
 
         public AsyncRelayCommand Compare { get; }
+        public AsyncRelayCommand CancelCompare { get; }
 
         #endregion
 
@@ -32,37 +78,72 @@ namespace JustFileComparer.ViewModels
         public MainWindowViewModel()
         {
             Compare = new AsyncRelayCommand(CompareFiles, CanCompareFiles);
+            CancelCompare = new AsyncRelayCommand(CancelCompareFiles, CanCancelCompareFiles);
 
+#if DEBUG
             SourceRoot = @"X:\Data\Books";
             TargetRoot = @"X:\Data\Books - Copy";
 
             UpdateStatus(CanCompareFiles() ? "Ready!" : "---");
+#endif
         }
 
         #endregion
 
         #region Compare Files
 
-        public async Task CompareFiles(CancellationToken cancellationToken)
+        private async Task CompareFiles()
         {
             IsProcessing = true;
             UpdateStatus($"---");
 
-            FileComparisonMode mode = FileComparisonMode.Size | FileComparisonMode.Hash;
-
-            Progress<FileComparison> progress = new Progress<FileComparison>(comparison =>
+            using (_compareFilesCancellationTokenSource = new CancellationTokenSource())
             {
-                UpdateStatus($"{Path.GetFileName(comparison.Source)}");
-            });
+                CancellationToken cancellationToken = _compareFilesCancellationTokenSource.Token;
 
-            FileComparerWorker worker = new FileComparerWorker();
-            worker.OnComparisonStarted += OnComparisonStarted;
-            worker.OnComparisonCompleted += OnComparisonCompleted;
+                FileComparisonMode mode = FileComparisonMode.Size | FileComparisonMode.Hash;
 
-            var result = await worker.CompareDirectoryContentAsync(SourceRoot, TargetRoot, mode, progress, cancellationToken: cancellationToken);
-            UpdateStatus($"S:{result.SuccessfulComparisonsCount} F:{result.FailedComparisonsCount}");
+                Progress<FileComparisonProgress> progress = new Progress<FileComparisonProgress>(UpdateProgress);
+
+                FileComparerWorker worker = new FileComparerWorker();
+                worker.OnComparisonStarted += OnComparisonStarted;
+                worker.OnComparisonCompleted += OnComparisonCompleted;
+
+                var result = await worker.CompareDirectoryContentAsync(SourceRoot, TargetRoot, mode, progress, cancellationToken: cancellationToken);
+                UpdateStatus(result.ToString());
+            }
 
             IsProcessing = false;
+        }
+
+        public bool CanCompareFiles() => !IsProcessing && !string.IsNullOrWhiteSpace(SourceRoot) && !string.IsNullOrWhiteSpace(TargetRoot);
+
+        #endregion
+
+        #region Cancel Compare Files
+
+        private async Task CancelCompareFiles()
+        {
+            if (!IsProcessing || _compareFilesCancellationTokenSource == null) return;
+
+            await _compareFilesCancellationTokenSource.CancelAsync();
+        }
+
+        public bool CanCancelCompareFiles() => IsProcessing;
+
+        #endregion
+
+        #region Methods
+
+        private void UpdateProgress(FileComparisonProgress progress)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                SuccessfulComparisonsCount = progress.SuccessfulComparisonsCount;
+                FailedComparisonsCount = progress.FailedComparisonsCount;
+                TotalComparisonsCount = progress.TotalComparisonsCount;
+                Status = $"{progress.CurrentComparison}";
+            });
         }
 
         private void UpdateStatus(string message)
@@ -79,8 +160,6 @@ namespace JustFileComparer.ViewModels
         {
             UpdateStatus($"Completed");
         }
-
-        public bool CanCompareFiles() => !IsProcessing && !string.IsNullOrWhiteSpace(SourceRoot) && !string.IsNullOrWhiteSpace(TargetRoot);
 
         #endregion
     }

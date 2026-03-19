@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace JustFileComparerCore
+﻿namespace JustFileComparerCore
 {
     public sealed class FileComparerWorker
     {
@@ -13,13 +11,15 @@ namespace JustFileComparerCore
             string sourceRoot, 
             string targetRoot, 
             FileComparisonMode fileComparisonMode = FileComparisonMode.Size | FileComparisonMode.Hash,
-            IProgress<FileComparison> progress = null,
+            IProgress<FileComparisonProgress> progress = null,
             uint maxDegreeOfParallelism = 0, 
             uint maxWorkerCount = 0, 
             CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(sourceRoot) || !Directory.Exists(sourceRoot)) return FileComparerWorkerResult.None;
-            if (string.IsNullOrEmpty(targetRoot) || !Directory.Exists(sourceRoot)) return FileComparerWorkerResult.None;
+            if (string.IsNullOrWhiteSpace(sourceRoot)) return FileComparerWorkerResult.Error("Source Root should not be empty!");
+            if (!Directory.Exists(sourceRoot)) return FileComparerWorkerResult.Error("Source Root does not exist!");
+            if (string.IsNullOrWhiteSpace(targetRoot)) return FileComparerWorkerResult.Error("Target Root should not be empty!");
+            if (!Directory.Exists(targetRoot)) return FileComparerWorkerResult.Error("Target Root does not exist!");
             if (fileComparisonMode == FileComparisonMode.None) return FileComparerWorkerResult.None;
 
             StringComparison comparison = StringComparison.OrdinalIgnoreCase;
@@ -28,15 +28,15 @@ namespace JustFileComparerCore
                 string sourceRootLower = sourceRoot.ToLowerInvariant();
                 string targetRootLower = targetRoot.ToLowerInvariant();
 
-                if (sourceRootLower == targetRootLower) return FileComparerWorkerResult.None;
+                if (sourceRootLower == targetRootLower) return FileComparerWorkerResult.Error("Source Root and Target Root should not be the same!");
             }
             else // Unix, case-sensitive
             {
                 comparison = StringComparison.Ordinal;
             }
             
-            if (sourceRoot.IsInside(targetRoot, comparison)) return FileComparerWorkerResult.None;
-            if (targetRoot.IsInside(sourceRoot, comparison)) return FileComparerWorkerResult.None;
+            if (sourceRoot.IsInside(targetRoot, comparison)) return FileComparerWorkerResult.Error("Source Root should not be inside Target Root");
+            if (targetRoot.IsInside(sourceRoot, comparison)) return FileComparerWorkerResult.Error("Target Root should not be inside Source Root");
 
             if (maxDegreeOfParallelism == 0) maxDegreeOfParallelism = (uint)Environment.ProcessorCount;
 
@@ -57,7 +57,13 @@ namespace JustFileComparerCore
                 {
                     FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
                     result.Add(comparison);
-                    progress?.Report(comparison);
+
+                    progress?.Report(new FileComparisonProgress()
+                    {
+                        SuccessfulComparisonsCount = result.SuccessfulComparisonsCount,
+                        FailedComparisonsCount = result.FailedComparisonsCount,
+                        CurrentComparison = comparison,
+                    });
                 });
 
             RaiseOnComparisonCompleted();

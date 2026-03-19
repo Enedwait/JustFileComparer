@@ -10,6 +10,17 @@
         public override string ToString() => $"{Source} vs {Target}: {Result}, {Mode}";
     }
 
+    public struct FileComparisonProgress
+    {
+        public FileComparison CurrentComparison;
+        public ulong SuccessfulComparisonsCount;
+        public ulong FailedComparisonsCount;
+
+        public ulong TotalComparisonsCount => SuccessfulComparisonsCount + FailedComparisonsCount;
+
+        public override string ToString() => $"Success:{SuccessfulComparisonsCount} Failure:{FailedComparisonsCount} Total:{TotalComparisonsCount}; Current Comparison: {CurrentComparison}";
+    }
+
     public enum FileComparisonResult
     {
         None = 0,
