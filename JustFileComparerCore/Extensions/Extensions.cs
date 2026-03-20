@@ -27,5 +27,21 @@
         }
 
         #endregion
+
+        #region ConvertToValidFileName
+
+        public static string ConvertToValidFileName(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return "";
+
+            foreach (var invalidChar in Path.GetInvalidFileNameChars())
+                input = input.Replace(invalidChar, '-');
+
+            return input;
+        }
+
+        #endregion
+
+        public static string TimeStampUtc => DateTime.UtcNow.ToString("u").ConvertToValidFileName();
     }
 }

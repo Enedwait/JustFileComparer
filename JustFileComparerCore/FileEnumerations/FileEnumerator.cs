@@ -100,13 +100,21 @@ namespace JustFileComparerCore.FileEnumerations
                     {
                         await foreach (string currentDirectory in directoryChannel.Reader.ReadAllAsync(cancellationToken))
                         {
+                            cancellationToken.ThrowIfCancellationRequested();
+
                             try
                             {
                                 foreach (var file in Directory.EnumerateFiles(currentDirectory, searchPattern, SearchOption.TopDirectoryOnly))
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+
                                     await fileChannel.Writer.WriteAsync(file, cancellationToken);
+                                }
 
                                 foreach (var directory in Directory.EnumerateDirectories(currentDirectory, "*", SearchOption.TopDirectoryOnly))
                                 {
+                                    cancellationToken.ThrowIfCancellationRequested();
+
                                     Interlocked.Increment(ref pendingDirectories);
                                     await directoryChannel.Writer.WriteAsync(directory, cancellationToken);
                                 }
@@ -126,6 +134,10 @@ namespace JustFileComparerCore.FileEnumerations
                     {
                         Console.WriteLine(ex);
                     }
+
+                    if (cancellationToken.IsCancellationRequested) 
+                        completion.TrySetResult(true);
+
                 }, cancellationToken);
             }
 
@@ -136,7 +148,10 @@ namespace JustFileComparerCore.FileEnumerations
             }, cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
 
             await foreach (string file in fileChannel.Reader.ReadAllAsync(cancellationToken))
+            {
+                if (cancellationToken.IsCancellationRequested) break;
                 yield return file;
+            }
         }
 
         #endregion

@@ -1,12 +1,13 @@
 ﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using JustFileComparerCore;
 using JustFileComparerCore.Helpers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JustFileComparerCore.FileComparers;
+using JustFileComparerCore.Loggers;
+using Timer = System.Timers.Timer;
 
 namespace JustFileComparer.ViewModels
 {
@@ -14,14 +15,18 @@ namespace JustFileComparer.ViewModels
     {
         #region Fields
 
+        private Timer updateTimer;
         private CancellationTokenSource _compareFilesCancellationTokenSource;
         private bool _isProcessing;
+        private bool _isCanceled;
         [ObservableProperty] private string _status;
+        [ObservableProperty] private string _elapsedTime;
         [ObservableProperty] private ulong _totalComparisonsCount;
         [ObservableProperty] private ulong _successfulComparisonsCount;
         [ObservableProperty] private ulong _failedComparisonsCount;
         private string _sourceRoot;
         private string _targetRoot;
+        private FileComparisonProgressLogger progressLogger;
 
         #endregion
 
@@ -37,6 +42,7 @@ namespace JustFileComparer.ViewModels
                 if (SetProperty(ref _sourceRoot, value))
                 {
                     Compare?.NotifyCanExecuteChanged();
+                    UpdateStatusIfCanCompare();
                 }
             }
         }
@@ -49,6 +55,7 @@ namespace JustFileComparer.ViewModels
                 if (SetProperty(ref _targetRoot, value))
                 {
                     Compare?.NotifyCanExecuteChanged();
+                    UpdateStatusIfCanCompare();
                 }
             }
         }
@@ -59,6 +66,19 @@ namespace JustFileComparer.ViewModels
             private set
             {
                 if (SetProperty(ref _isProcessing, value))
+                {
+                    Compare?.NotifyCanExecuteChanged();
+                    CancelCompare?.NotifyCanExecuteChanged();
+                }
+            }
+        }
+
+        public bool IsCanceled
+        {
+            get => _isCanceled;
+            private set
+            {
+                if (SetProperty(ref _isCanceled, value))
                 {
                     Compare?.NotifyCanExecuteChanged();
                     CancelCompare?.NotifyCanExecuteChanged();
@@ -82,12 +102,9 @@ namespace JustFileComparer.ViewModels
             Compare = new AsyncRelayCommand(CompareFiles, CanCompareFiles);
             CancelCompare = new AsyncRelayCommand(CancelCompareFiles, CanCancelCompareFiles);
 
-#if DEBUG
-            SourceRoot = @"X:\Data\Books";
-            TargetRoot = @"X:\Data\Books - Copy";
+            progressLogger = new FileComparisonProgressLogger();
 
-            UpdateStatus(CanCompareFiles() ? "Ready!" : "---");
-#endif
+            ElapsedTime = "---";
         }
 
         #endregion
@@ -103,6 +120,7 @@ namespace JustFileComparer.ViewModels
             {
                 CancellationToken cancellationToken = _compareFilesCancellationTokenSource.Token;
 
+                // ToDo: allow user to choose the comparison mode
                 FileComparisonMode mode = FileComparisonMode.Size | FileComparisonMode.Hash;
 
                 Progress<FileComparisonProgress> progress = new Progress<FileComparisonProgress>(UpdateProgress);
@@ -111,14 +129,19 @@ namespace JustFileComparer.ViewModels
                 worker.OnComparisonStarted += OnComparisonStarted;
                 worker.OnComparisonCompleted += OnComparisonCompleted;
 
-                var result = await worker.CompareDirectoryContentAsync(SourceRoot, TargetRoot, mode, progress, cancellationToken: cancellationToken);
-                UpdateStatus(result.ToString());
+                await progressLogger.BeginLog(SourceRoot, TargetRoot, mode);
+
+                var result = await worker.CompareDirectoryContentAsync(SourceRoot, TargetRoot, mode, progress, 0, 0, cancellationToken);
+                UpdateStatus(result.Success ? "Completed" : result.ErrorMessage);
+
+                await progressLogger.EndLog(result);
             }
 
             IsProcessing = false;
+            IsCanceled = false;
         }
 
-        public bool CanCompareFiles() => !IsProcessing && !string.IsNullOrWhiteSpace(SourceRoot) && !string.IsNullOrWhiteSpace(TargetRoot);
+        public bool CanCompareFiles() => !IsProcessing && !IsCanceled && !string.IsNullOrWhiteSpace(SourceRoot) && !string.IsNullOrWhiteSpace(TargetRoot);
 
         #endregion
 
@@ -126,19 +149,23 @@ namespace JustFileComparer.ViewModels
 
         private async Task CancelCompareFiles()
         {
-            if (!IsProcessing || _compareFilesCancellationTokenSource == null) return;
+            if (!IsProcessing || IsCanceled) return;
+
+            IsCanceled = true;
 
             await _compareFilesCancellationTokenSource.CancelAsync();
         }
 
-        public bool CanCancelCompareFiles() => IsProcessing;
+        public bool CanCancelCompareFiles() => IsProcessing && !IsCanceled;
 
         #endregion
 
         #region Methods
 
-        private void UpdateProgress(FileComparisonProgress progress)
+        private async void UpdateProgress(FileComparisonProgress progress)
         {
+            await progressLogger.Log(progress);
+
             Dispatcher.UIThread.Post(() =>
             {
                 SuccessfulComparisonsCount = progress.SuccessfulComparisonsCount;
@@ -153,13 +180,32 @@ namespace JustFileComparer.ViewModels
             Dispatcher.UIThread.Post(() => Status = message);
         }
 
+        private void UpdateStatusIfCanCompare()
+        {
+            if (CanCompareFiles()) UpdateStatus("Ready to compare!");
+            else if ("Ready to compare!".Equals(_status)) UpdateStatus("");
+        }
+
         private void OnComparisonStarted(object? sender, EventArgs e)
         {
+            updateTimer = new Timer(900);
+            updateTimer.AutoReset = true;
+            updateTimer.Elapsed += UpdateTimerElapsed;
+            updateTimer.Start();
+
             UpdateStatus($"Started");
+        }
+
+        private void UpdateTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            ElapsedTime = $"{progressLogger?.Elapsed:hh\\:mm\\:ss}";
         }
 
         private void OnComparisonCompleted(object? sender, EventArgs e)
         {
+            updateTimer.Stop();
+            updateTimer = null;
+
             UpdateStatus($"Completed");
         }
 

@@ -53,21 +53,47 @@ namespace JustFileComparerCore.FileComparers
 
             RaiseOnComparisonStarted();
 
-            await Parallel.ForEachAsync(
-                FileEnumerator.EnumerateFilesAsync(sourceRoot, maxWorkerCount: maxWorkerCount, cancellationToken: cancellationToken),
-                options,
-                async (filePath, token) =>
-                {
-                    FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
-                    result.Add(comparison);
-
-                    progress?.Report(new FileComparisonProgress()
+            try
+            {
+                await Parallel.ForEachAsync(
+                    FileEnumerator.EnumerateFilesAsync(sourceRoot, "*", maxWorkerCount, cancellationToken),
+                    options,
+                    async (filePath, token) =>
                     {
-                        SuccessfulComparisonsCount = result.SuccessfulComparisonsCount,
-                        FailedComparisonsCount = result.FailedComparisonsCount,
-                        CurrentComparison = comparison,
+                        token.ThrowIfCancellationRequested();
+
+                        try
+                        {
+                            FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
+                            if (!token.IsCancellationRequested)
+                            {
+                                result.Add(comparison);
+
+                                progress?.Report(new FileComparisonProgress()
+                                {
+                                    SuccessfulComparisonsCount = result.SuccessfulComparisonsCount,
+                                    FailedComparisonsCount = result.FailedComparisonsCount,
+                                    CurrentComparison = comparison,
+                                });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
                     });
-                });
+            }
+            catch (OperationCanceledException)
+            {
+                result.SetCanceled();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+                result.SetCanceled();
 
             RaiseOnComparisonCompleted();
 
@@ -78,7 +104,7 @@ namespace JustFileComparerCore.FileComparers
 
         #region Single File Processing
 
-        private async Task<FileComparison> ProcessFile(string filePath, string sourceRoot, string targetRoot, FileComparisonMode comparisonMode, CancellationToken token)
+        private async Task<FileComparison> ProcessFile(string filePath, string sourceRoot, string targetRoot, FileComparisonMode comparisonMode, CancellationToken cancellationToken)
         {
             FileComparison comparison = new FileComparison()
             {
@@ -100,7 +126,7 @@ namespace JustFileComparerCore.FileComparers
                 return comparison;
             }
 
-            bool result = await FileComparer.AreFilesEqualAsync(comparison.Source, comparison.Target, comparisonMode);
+            bool result = await FileComparer.AreFilesEqualAsync(comparison.Source, comparison.Target, comparisonMode, cancellationToken);
             comparison.Result = result ? FileComparisonResult.Equal : FileComparisonResult.Differ;
             return comparison;
         }
