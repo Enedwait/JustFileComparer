@@ -17,7 +17,7 @@ namespace JustFileComparerCore.FileEnumerations
         /// <param name="progress"></param>
         /// <param name="cancellationToken"></param>
         /// <returns>The <see cref="IEnumerable{String}"/> containing the full paths of all files found as requested.</returns>
-        public static async Task<IEnumerable<string>> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0, IProgress<string> progress = default, CancellationToken cancellationToken = default)
+        public static IEnumerable<string> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0, IProgress<string> progress = default, CancellationToken cancellationToken = default)
         {
             var files = new ConcurrentBag<string>();
             var directories = new ConcurrentQueue<string>();
@@ -36,22 +36,29 @@ namespace JustFileComparerCore.FileEnumerations
                         while (true)
                         {
                             if (!directories.TryDequeue(out string currentDirectory))
-                                break;
+                            {
+                                Thread.Sleep(10);
+                                continue;
+                            }
 
                             try
                             {
-                                cancellationToken.ThrowIfCancellationRequested();
+                                if (cancellationToken.IsCancellationRequested) break;
 
                                 foreach (var file in Directory.EnumerateFiles(currentDirectory, searchPattern, SearchOption.TopDirectoryOnly))
                                 {
+                                    if (cancellationToken.IsCancellationRequested) break;
+
                                     files.Add(file);
                                     progress?.Report(file);
                                 }
 
-                                cancellationToken.ThrowIfCancellationRequested();
+                                if (cancellationToken.IsCancellationRequested) break;
 
                                 foreach (var directory in Directory.EnumerateDirectories(currentDirectory, "*", SearchOption.TopDirectoryOnly))
                                 {
+                                    if (cancellationToken.IsCancellationRequested) break;
+
                                     directories.Enqueue(directory);
                                     countdown.AddCount();
                                 }
@@ -62,15 +69,31 @@ namespace JustFileComparerCore.FileEnumerations
                             }
                             finally
                             {
-                                countdown.Signal();
+                                try
+                                {
+                                    countdown.Signal();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine(ex);
+                                }
                             }
+
+                            if (cancellationToken.IsCancellationRequested) break;
                         }
-                    }, cancellationToken);
+                    });
                 }
 
-                countdown.Wait(cancellationToken);
-
-                Task.WaitAll(workers, cancellationToken);
+                try
+                {
+                    countdown.Wait(cancellationToken);
+                }
+                catch(OperationCanceledException)
+                {}
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
 
             return files;

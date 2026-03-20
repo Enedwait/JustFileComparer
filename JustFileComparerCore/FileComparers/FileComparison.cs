@@ -7,7 +7,7 @@
         public FileComparisonResult Result;
         public FileComparisonMode Mode;
 
-        public override string ToString() => $"{Source} vs {Target}: {Result}, {Mode}";
+        public override string ToString() => $"'{Source}' vs '{Target}': {Result}, {Mode}";
     }
 
     public struct FileComparisonProgress

@@ -7,32 +7,32 @@ namespace JustFileComparerCore.Tests
         [Fact]
         public async void EnumerateFiles_CheckFilesCountInDifferentFolders()
         {
-            var result = await FileEnumerator.EnumerateFiles(@"X:\1СBase");
+            var result = FileEnumerator.EnumerateFiles(@"X:\1СBase");
             Assert.Equal(82, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\1СData");
+            result = FileEnumerator.EnumerateFiles(@"X:\1СData");
             Assert.Equal(1, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\HDRI");
+            result = FileEnumerator.EnumerateFiles(@"X:\HDRI");
             Assert.Equal(5887, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\Creality");
+            result = FileEnumerator.EnumerateFiles(@"X:\Creality");
             Assert.Equal(24, result.Count());
         }
 
         [Fact]
         public async void EnumerateFilesAsync_CheckFilesCountInDifferentFolders()
         {
-            var result = await FileEnumerator.EnumerateFiles(@"X:\1СBase");
+            var result = FileEnumerator.EnumerateFiles(@"X:\1СBase");
             Assert.Equal(82, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\1СData");
+            result = FileEnumerator.EnumerateFiles(@"X:\1СData");
             Assert.Equal(1, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\HDRI");
+            result = FileEnumerator.EnumerateFiles(@"X:\HDRI");
             Assert.Equal(5887, result.Count());
 
-            result = await FileEnumerator.EnumerateFiles(@"X:\Creality");
+            result = FileEnumerator.EnumerateFiles(@"X:\Creality");
             Assert.Equal(24, result.Count());
         }
     }

@@ -115,7 +115,12 @@ namespace JustFileComparer.ViewModels
             DoCompareBySize = true;
             DoCompareByHash = true;
 
-            ElapsedTime = "---";
+            ResetInfo();
+#if DEBUG
+            DoCompareByHash = false;
+            SourceRoot = @"U:\";
+            TargetRoot = @"W:\";
+#endif
         }
 
         #endregion
@@ -128,8 +133,9 @@ namespace JustFileComparer.ViewModels
             {
                 Dispatcher.UIThread.Invoke(() =>
                 {
+                    lastProgress = new FileComparisonProgress();
                     IsProcessing = true;
-                    UpdateStatus($"---");
+                    ResetInfo();
                 });
 
                 using (_compareFilesCancellationTokenSource = new CancellationTokenSource())
@@ -235,7 +241,18 @@ namespace JustFileComparer.ViewModels
             SuccessfulComparisonsCount = lastProgress.SuccessfulComparisonsCount;
             FailedComparisonsCount = lastProgress.FailedComparisonsCount;
             TotalComparisonsCount = lastProgress.TotalComparisonsCount;
-            Status = $"{lastProgress.CurrentComparison}";
+            if (lastProgress.CurrentComparison.Result != FileComparisonResult.None) 
+                Status = $"{lastProgress.CurrentComparison}";
+        }
+
+        private void ResetInfo()
+        {
+            ElapsedTime ="---";
+            TotalFilesCount = 0;
+            SuccessfulComparisonsCount = 0;
+            FailedComparisonsCount = 0;
+            TotalComparisonsCount = 0;
+            Status = $"";
         }
 
         #endregion

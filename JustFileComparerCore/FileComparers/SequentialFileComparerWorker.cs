@@ -34,7 +34,7 @@ namespace JustFileComparerCore.FileComparers
             
             /*
             Progress<string> fileSearchProgress = new Progress<string>(FileSearchProgressChanged);
-            var files = await FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, fileSearchProgress, cancellationToken);
+            var files = FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, fileSearchProgress, cancellationToken);
             _filesCount = (ulong)files.Count();
             result.SetFilesCount(_filesCount);*/
             
@@ -45,11 +45,7 @@ namespace JustFileComparerCore.FileComparers
                 files.Add(file);
             }
 
-            if (cancellationToken.IsCancellationRequested)
-            {
-                result.SetCanceled();
-            }
-            else
+            if (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
