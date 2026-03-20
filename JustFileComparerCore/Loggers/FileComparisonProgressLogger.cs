@@ -124,37 +124,56 @@ namespace JustFileComparerCore.Loggers
             cancellationTokenSource.Cancel();
 
             endedAt = DateTime.UtcNow;
-            await logWriter.WriteLineAsync($"Completed at: {endedAt:u}");
-            await logWriter.WriteLineAsync($"Comparison took: {Elapsed:hh\\:mm\\:ss\\.fff}");
-
-            if (result == null)
+            var task = Task.Run(async () =>
             {
-                await logWriter.WriteLineAsync($"Aborted");
-            }
-            else
-            {
-                if (result.Success)
-                {
-                    await logWriter.WriteLineAsync($"===SUCCESS===");
-                    await logWriter.WriteLineAsync($"Total Comparisons: {result.SuccessfulComparisonsCount + result.FailedComparisonsCount}");
-                    await logWriter.WriteLineAsync($"Successful Comparisons: {result.SuccessfulComparisonsCount}");
-                    await logWriter.WriteLineAsync($"Failed Comparisons: {result.FailedComparisonsCount}");
-                }
-                else
-                {
-                    await logWriter.WriteLineAsync($"===FAILURE===");
-                    await logWriter.WriteLineAsync($"Error: {result.ErrorMessage}");
-                    await logWriter.WriteLineAsync($"Total Comparisons: {result.SuccessfulComparisonsCount + result.FailedComparisonsCount}");
-                    await logWriter.WriteLineAsync($"Successful Comparisons: {result.SuccessfulComparisonsCount}");
-                    await logWriter.WriteLineAsync($"Failed Comparisons: {result.FailedComparisonsCount}");
-                }
-            }
+                Thread.Sleep((int)(waitForLogEntry * 1.1f));
 
-            await logWriter.FlushAsync();
+                try
+                {
+                    await logWriter.WriteLineAsync($"Completed at: {endedAt:u}");
+                    await logWriter.WriteLineAsync($"Comparison took: {Elapsed:hh\\:mm\\:ss\\.fff}");
 
-            logWriter.Close();
+                    if (result == null)
+                    {
+                        await logWriter.WriteLineAsync($"Aborted");
+                    }
+                    else
+                    {
+                        if (result.Success)
+                        {
+                            await logWriter.WriteLineAsync($"===SUCCESS===");
+                            await logWriter.WriteLineAsync($"Total Files: {result.FilesCount}");
+                            await logWriter.WriteLineAsync($"Total Comparisons: {result.SuccessfulComparisonsCount + result.FailedComparisonsCount}");
+                            await logWriter.WriteLineAsync($"Successful Comparisons: {result.SuccessfulComparisonsCount}");
+                            await logWriter.WriteLineAsync($"Failed Comparisons: {result.FailedComparisonsCount}");
+                        }
+                        else
+                        {
+                            await logWriter.WriteLineAsync($"===FAILURE===");
+                            await logWriter.WriteLineAsync($"Error: {result.ErrorMessage}");
+                            await logWriter.WriteLineAsync($"Total Files: {result.FilesCount}");
+                            await logWriter.WriteLineAsync($"Total Comparisons: {result.SuccessfulComparisonsCount + result.FailedComparisonsCount}");
+                            await logWriter.WriteLineAsync($"Successful Comparisons: {result.SuccessfulComparisonsCount}");
+                            await logWriter.WriteLineAsync($"Failed Comparisons: {result.FailedComparisonsCount}");
+                        }
+                    }
+
+                    await logWriter.FlushAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                finally
+                {
+                    logWriter.Close();
+                }
+            });
+
+            task.Wait();
 
             isLogStarted = false;
+
         }
 
         #endregion

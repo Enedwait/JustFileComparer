@@ -6,6 +6,7 @@ namespace JustFileComparerCore.FileComparers
     {
         #region Fields
 
+        private ulong filesCount = 0;
         private ulong successfulComparisonsCount = 0;
         private ulong failedComparisonsCount = 0;
 
@@ -16,6 +17,8 @@ namespace JustFileComparerCore.FileComparers
         public bool Success { get; private set; }
         public string ErrorMessage { get; private set; }
 
+
+        public ulong FilesCount => filesCount;
         public ulong SuccessfulComparisonsCount => successfulComparisonsCount;
         public ulong FailedComparisonsCount => failedComparisonsCount;
 
@@ -48,6 +51,9 @@ namespace JustFileComparerCore.FileComparers
             }
         }
 
+        public void SetFilesCount(ulong filesCount) => 
+            this.filesCount = filesCount;
+
         public void SetCanceled()
         {
             Success = false;
@@ -56,7 +62,7 @@ namespace JustFileComparerCore.FileComparers
 
         public override string ToString()
         {
-            if (Success) return $"S: {SuccessfulComparisonsCount}, F: {FailedComparisonsCount}";
+            if (Success) return $"T: {filesCount}, S: {SuccessfulComparisonsCount}, F: {FailedComparisonsCount}";
             return $"{ErrorMessage}";
         }
 

@@ -2,17 +2,17 @@
 
 namespace JustFileComparerCore.FileComparers
 {
-    public sealed class FileComparerWorker : FileComparerWorkerBase
+    public class SequentialFileComparerWorker : FileComparerWorkerBase
     {
         #region CompareDirectoryContentAsync
 
         public override async Task<FileComparerWorkerResult> CompareDirectoryContentAsync(
-            string sourceRoot, 
-            string targetRoot, 
+            string sourceRoot,
+            string targetRoot,
             FileComparisonMode fileComparisonMode = FileComparisonMode.Size | FileComparisonMode.Hash,
             IProgress<FileComparisonProgress> progress = null,
-            uint maxDegreeOfParallelism = 0, 
-            uint maxWorkerCount = 0, 
+            uint maxDegreeOfParallelism = 0,
+            uint maxWorkerCount = 0,
             CancellationToken cancellationToken = default)
         {
             _filesCount = 0;
@@ -31,10 +31,13 @@ namespace JustFileComparerCore.FileComparers
 
             RaiseOnComparisonStarted();
 
+            var files = FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, cancellationToken);
+            _filesCount = (ulong)files.Count();
+            result.SetFilesCount(_filesCount);
+
             try
             {
-                await Parallel.ForEachAsync(
-                    FileEnumerator.EnumerateFilesAsync(sourceRoot, "*", maxWorkerCount, cancellationToken),
+                await Parallel.ForEachAsync(files,
                     options,
                     async (filePath, token) =>
                     {
@@ -42,9 +45,6 @@ namespace JustFileComparerCore.FileComparers
 
                         try
                         {
-                            Interlocked.Increment(ref _filesCount);
-                            result.SetFilesCount(_filesCount);
-
                             FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
                             if (!token.IsCancellationRequested)
                             {

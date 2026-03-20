@@ -21,6 +21,7 @@ namespace JustFileComparer.ViewModels
         private bool _isCanceled;
         [ObservableProperty] private string _status;
         [ObservableProperty] private string _elapsedTime;
+        [ObservableProperty] private ulong _totalFilesCount;
         [ObservableProperty] private ulong _totalComparisonsCount;
         [ObservableProperty] private ulong _successfulComparisonsCount;
         [ObservableProperty] private ulong _failedComparisonsCount;
@@ -125,7 +126,8 @@ namespace JustFileComparer.ViewModels
 
                 Progress<FileComparisonProgress> progress = new Progress<FileComparisonProgress>(UpdateProgress);
 
-                FileComparerWorker worker = new FileComparerWorker();
+                //FileComparerWorkerBase worker = new FileComparerWorker();
+                FileComparerWorkerBase worker = new SequentialFileComparerWorker();
                 worker.OnComparisonStarted += OnComparisonStarted;
                 worker.OnComparisonCompleted += OnComparisonCompleted;
 
@@ -190,15 +192,14 @@ namespace JustFileComparer.ViewModels
         {
             updateTimer = new Timer(900);
             updateTimer.AutoReset = true;
-            updateTimer.Elapsed += UpdateTimerElapsed;
+            updateTimer.Elapsed += (timer, args) =>
+            {
+                ElapsedTime = $"{progressLogger?.Elapsed:hh\\:mm\\:ss}";
+                TotalFilesCount = (sender as FileComparerWorkerBase).FilesCount;
+            };
             updateTimer.Start();
 
             UpdateStatus($"Started");
-        }
-
-        private void UpdateTimerElapsed(object? sender, System.Timers.ElapsedEventArgs e)
-        {
-            ElapsedTime = $"{progressLogger?.Elapsed:hh\\:mm\\:ss}";
         }
 
         private void OnComparisonCompleted(object? sender, EventArgs e)

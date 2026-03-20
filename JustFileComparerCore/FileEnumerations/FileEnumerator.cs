@@ -15,7 +15,7 @@ namespace JustFileComparerCore.FileEnumerations
         /// <param name="searchPattern">the file name pattern for search.</param>
         /// <param name="maxWorkerCount">the max number of concurrent workers; if set to 0 (default) then the number of logical processors is used.</param>
         /// <returns>The <see cref="IEnumerable{String}"/> containing the full paths of all files found as requested.</returns>
-        public static IEnumerable<string> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0)
+        public static IEnumerable<string> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0, CancellationToken cancellationToken = default)
         {
             var files = new ConcurrentBag<string>();
             var directories = new ConcurrentQueue<string>();
@@ -38,8 +38,12 @@ namespace JustFileComparerCore.FileEnumerations
 
                             try
                             {
+                                cancellationToken.ThrowIfCancellationRequested();
+
                                 foreach (var file in Directory.EnumerateFiles(currentDirectory, searchPattern, SearchOption.TopDirectoryOnly))
                                     files.Add(file);
+
+                                cancellationToken.ThrowIfCancellationRequested();
 
                                 foreach (var directory in Directory.EnumerateDirectories(currentDirectory, "*", SearchOption.TopDirectoryOnly))
                                 {
@@ -56,12 +60,12 @@ namespace JustFileComparerCore.FileEnumerations
                                 countdown.Signal();
                             }
                         }
-                    });
+                    }, cancellationToken);
                 }
 
-                countdown.Wait();
+                countdown.Wait(cancellationToken);
 
-                Task.WaitAll(workers);
+                Task.WaitAll(workers, cancellationToken);
             }
 
             return files;

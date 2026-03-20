@@ -62,6 +62,10 @@
                 <TextBlock Text="{Binding ElapsedTime}" HorizontalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Found Files Count: "/>
+                <TextBlock Text="{Binding TotalFilesCount}" HorizontalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Comparisons Count: "/>
                 <TextBlock Text="{Binding TotalComparisonsCount}" HorizontalAlignment="Center" />
             </StackPanel>
