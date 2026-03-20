@@ -10,17 +10,18 @@
         WindowState="Normal"
         CanResize="False"
         SizeToContent="Manual"
-        Height="320"
+        Height="360"
         Width="440"
         Icon="/Assets/avalonia-logo.ico"
         Title="JustFileComparer">
 
-    <Design.Height>320</Design.Height>
+    <Design.Height>360</Design.Height>
     <Design.Width>440</Design.Width>
     <Design.DataContext><vm:MainWindowViewModel/></Design.DataContext>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -43,20 +44,27 @@
             <TextBox Text="{Binding TargetRoot, Mode=TwoWay}"  />
         </StackPanel>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
+        <StackPanel Grid.Row="3" Margin="0 10" Orientation="Horizontal">
+            <TextBlock Margin="0 0 10 0" Text="File Comparison Mode: " VerticalAlignment="Center"/>
+            <CheckBox Padding="10 0" Content="Size" IsChecked="{Binding DoCompareBySize}"/>
+            <CheckBox Padding="10 0" Content="Hash" IsChecked="{Binding DoCompareByHash}"/>
+            <CheckBox Padding="10 0" Content="Bytes" IsChecked="{Binding DoCompareByBytes}"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center">
             <Button Content="Compare" HorizontalAlignment="Center"
                     Command="{Binding Compare}"/>
             <Button Content="Cancel" HorizontalAlignment="Center"
                     Command="{Binding CancelCompare}"/>
         </StackPanel>
 
-        <Label Grid.Row="3" 
+        <Label Grid.Row="4" 
                HorizontalAlignment="Right"
                VerticalAlignment="Center"
                Content="Canceling..."
                IsVisible="{Binding IsCanceled}"/>
 
-        <StackPanel Grid.Row="4" Margin="0 10">
+        <StackPanel Grid.Row="5" Margin="0 10">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Elapsed Time: "/>
                 <TextBlock Text="{Binding ElapsedTime}" HorizontalAlignment="Center" />
@@ -79,7 +87,7 @@
             </StackPanel>
         </StackPanel>
 
-        <StackPanel Grid.Row="5">
+        <StackPanel Grid.Row="6">
             <TextBlock Text="{Binding Status, Mode=OneWay}" HorizontalAlignment="Center"  />
         </StackPanel>
 

@@ -34,7 +34,7 @@ namespace JustFileComparerCore.FileComparers
             try
             {
                 await Parallel.ForEachAsync(
-                    FileEnumerator.EnumerateFilesAsync(sourceRoot, "*", maxWorkerCount, cancellationToken),
+                    FileEnumerator.EnumerateFilesAsAsyncEnumerable(sourceRoot, "*", maxWorkerCount, cancellationToken),
                     options,
                     async (filePath, token) =>
                     {
@@ -75,6 +75,8 @@ namespace JustFileComparerCore.FileComparers
 
             if (cancellationToken.IsCancellationRequested)
                 result.SetCanceled();
+
+            result.SetFilesCount(_filesCount);
 
             RaiseOnComparisonCompleted();
 

@@ -13,9 +13,11 @@ namespace JustFileComparerCore.FileEnumerations
         /// </summary>
         /// <param name="root">the root directory path.</param>
         /// <param name="searchPattern">the file name pattern for search.</param>
-        /// <param name="maxWorkerCount">the max number of concurrent workers; if set to 0 (default) then the number of logical processors is used.</param>
+        /// <param name="maxWorkerCount">the max number of concurrent workers; if set to 0 (default) then the number of logical processors is used.</param> 
+        /// <param name="progress"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns>The <see cref="IEnumerable{String}"/> containing the full paths of all files found as requested.</returns>
-        public static IEnumerable<string> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0, CancellationToken cancellationToken = default)
+        public static async Task<IEnumerable<string>> EnumerateFiles(string root, string searchPattern = "*", uint maxWorkerCount = 0, IProgress<string> progress = default, CancellationToken cancellationToken = default)
         {
             var files = new ConcurrentBag<string>();
             var directories = new ConcurrentQueue<string>();
@@ -41,7 +43,10 @@ namespace JustFileComparerCore.FileEnumerations
                                 cancellationToken.ThrowIfCancellationRequested();
 
                                 foreach (var file in Directory.EnumerateFiles(currentDirectory, searchPattern, SearchOption.TopDirectoryOnly))
+                                {
                                     files.Add(file);
+                                    progress?.Report(file);
+                                }
 
                                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -83,7 +88,7 @@ namespace JustFileComparerCore.FileEnumerations
         /// <param name="maxWorkerCount">the max number of concurrent workers; if set to 0 (default) then the number of logical processors is used.</param>
         /// <param name="cancellationToken">the <see cref="CancellationToken"/> to observe enumeration to complete or to cancel.</param>
         /// <returns>The <see cref="IAsyncEnumerable{String}"/> containing the full paths of all files found as requested.</returns>
-        public static async IAsyncEnumerable<string> EnumerateFilesAsync(string root, string searchPattern = "*", uint maxWorkerCount = 0, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public static async IAsyncEnumerable<string> EnumerateFilesAsAsyncEnumerable(string root, string searchPattern = "*", uint maxWorkerCount = 0, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             Channel<string> directoryChannel = Channel.CreateUnbounded<string>();
             Channel<string> fileChannel = Channel.CreateUnbounded<string>();
@@ -139,7 +144,7 @@ namespace JustFileComparerCore.FileEnumerations
                         Console.WriteLine(ex);
                     }
 
-                    if (cancellationToken.IsCancellationRequested) 
+                    if (cancellationToken.IsCancellationRequested)
                         completion.TrySetResult(true);
 
                 }, cancellationToken);

@@ -12,7 +12,7 @@ namespace JustFileComparerCore.Loggers
         private string logFilePath;
         private DateTime startedAt;
         private DateTime endedAt;
-        private bool isLogStarted;
+        private State state;
         private StreamWriter logWriter;
         private int waitForLogEntry;
         private ConcurrentQueue<string> queue = new ConcurrentQueue<string>();
@@ -23,7 +23,10 @@ namespace JustFileComparerCore.Loggers
 
         #region Properties
 
-        public TimeSpan Elapsed => isLogStarted ? DateTime.UtcNow - startedAt : TimeSpan.Zero;
+        public TimeSpan Elapsed => 
+            state == State.Started ? GetCurrentElapsedTime() : 
+            state is State.Ended or State.Completed ? endedAt - startedAt : 
+            TimeSpan.Zero;
 
         #endregion
 
@@ -41,10 +44,13 @@ namespace JustFileComparerCore.Loggers
 
         public async Task BeginLog(string sourceRoot, string targetRoot, FileComparisonMode comparisonMode)
         {
-            if (isLogStarted)
+            if (state == State.Started)
                 throw new Exception("Can't begin logging, it's already begun!");
 
-            isLogStarted = true;
+            if (state == State.Ended)
+                throw new Exception("Can't begin logging, it's not completed yet!");
+
+            state = State.Started;
 
             if (!Directory.Exists(logDirectoryPath))
                 Directory.CreateDirectory(logDirectoryPath);
@@ -75,8 +81,6 @@ namespace JustFileComparerCore.Loggers
             {
                 while (true)
                 {
-                    if (cancellationToken.IsCancellationRequested) return;
-
                     if (queue.TryDequeue(out string log))
                     {
                         try
@@ -90,6 +94,8 @@ namespace JustFileComparerCore.Loggers
                     }
                     else
                     {
+                        if (cancellationToken.IsCancellationRequested) return;
+
                         Thread.Sleep(waitForLogEntry);
                     }
                 }
@@ -102,7 +108,7 @@ namespace JustFileComparerCore.Loggers
 
         public async Task Log(FileComparisonProgress progress)
         {
-            if (!isLogStarted) 
+            if (state is not State.Started) 
                 return;
 
             if (progress.CurrentComparison.Result == FileComparisonResult.Equal) 
@@ -118,12 +124,14 @@ namespace JustFileComparerCore.Loggers
 
         public async Task EndLog(FileComparerWorkerResult result = null)
         {
-            if (!isLogStarted)
+            if (state != State.Started)
                 return;
 
-            cancellationTokenSource.Cancel();
-
             endedAt = DateTime.UtcNow;
+            state = State.Ended;
+
+            cancellationTokenSource.Cancel();
+            
             var task = Task.Run(async () =>
             {
                 Thread.Sleep((int)(waitForLogEntry * 1.1f));
@@ -172,9 +180,12 @@ namespace JustFileComparerCore.Loggers
 
             task.Wait();
 
-            isLogStarted = false;
-
+            state = State.Completed;
         }
+
+        private TimeSpan GetCurrentElapsedTime() => DateTime.UtcNow - startedAt;
+
+        private enum State { None, Started, Ended, Completed }
 
         #endregion
     }

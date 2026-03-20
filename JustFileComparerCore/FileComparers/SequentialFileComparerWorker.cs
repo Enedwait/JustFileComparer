@@ -1,4 +1,5 @@
-﻿using JustFileComparerCore.FileEnumerations;
+﻿using System.Collections.Concurrent;
+using JustFileComparerCore.FileEnumerations;
 
 namespace JustFileComparerCore.FileComparers
 {
@@ -30,47 +31,63 @@ namespace JustFileComparerCore.FileComparers
             };
 
             RaiseOnComparisonStarted();
-
-            var files = FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, cancellationToken);
+            
+            /*
+            Progress<string> fileSearchProgress = new Progress<string>(FileSearchProgressChanged);
+            var files = await FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, fileSearchProgress, cancellationToken);
             _filesCount = (ulong)files.Count();
-            result.SetFilesCount(_filesCount);
-
-            try
+            result.SetFilesCount(_filesCount);*/
+            
+            ConcurrentBag<string> files = new ConcurrentBag<string>();
+            await foreach (string file in FileEnumerator.EnumerateFilesAsAsyncEnumerable(sourceRoot, "*", maxWorkerCount, cancellationToken))
             {
-                await Parallel.ForEachAsync(files,
-                    options,
-                    async (filePath, token) =>
-                    {
-                        token.ThrowIfCancellationRequested();
-
-                        try
-                        {
-                            FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
-                            if (!token.IsCancellationRequested)
-                            {
-                                result.Add(comparison);
-
-                                progress?.Report(new FileComparisonProgress()
-                                {
-                                    SuccessfulComparisonsCount = result.SuccessfulComparisonsCount,
-                                    FailedComparisonsCount = result.FailedComparisonsCount,
-                                    CurrentComparison = comparison,
-                                });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex);
-                        }
-                    });
+                Interlocked.Increment(ref _filesCount);
+                files.Add(file);
             }
-            catch (OperationCanceledException)
+
+            if (cancellationToken.IsCancellationRequested)
             {
                 result.SetCanceled();
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine(ex);
+                try
+                {
+                    await Parallel.ForEachAsync(files,
+                        options,
+                        async (filePath, token) =>
+                        {
+                            token.ThrowIfCancellationRequested();
+
+                            try
+                            {
+                                FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
+                                if (!token.IsCancellationRequested)
+                                {
+                                    result.Add(comparison);
+
+                                    progress?.Report(new FileComparisonProgress()
+                                    {
+                                        SuccessfulComparisonsCount = result.SuccessfulComparisonsCount,
+                                        FailedComparisonsCount = result.FailedComparisonsCount,
+                                        CurrentComparison = comparison,
+                                    });
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(ex);
+                            }
+                        });
+                }
+                catch (OperationCanceledException)
+                {
+                    result.SetCanceled();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
             }
 
             if (cancellationToken.IsCancellationRequested)
@@ -79,6 +96,11 @@ namespace JustFileComparerCore.FileComparers
             RaiseOnComparisonCompleted();
 
             return result;
+        }
+
+        private void FileSearchProgressChanged(string file)
+        {
+            _filesCount++;
         }
 
         #endregion
