@@ -73,14 +73,12 @@ namespace JustFileComparerCore.FileComparers
         public static FileComparerWorkerResult None => new FileComparerWorkerResult()
         {
             Success = false,
-            FailedComparisons = null
         };
 
         public static FileComparerWorkerResult Error(string errorMessage) => new FileComparerWorkerResult()
         {
             Success = false,
             ErrorMessage = errorMessage,
-            FailedComparisons = null,
         };
 
         #endregion

@@ -10,13 +10,13 @@ namespace JustFileComparerCore.FileComparers
         public override async Task<FileComparerWorkerResult> CompareDirectoryContentAsync(
             string sourceRoot,
             string targetRoot,
-            FileComparisonMode fileComparisonMode = FileComparisonMode.Size | FileComparisonMode.Hash,
-            IProgress<FileComparisonProgress> progress = null,
+            FileComparisonMode fileComparisonMode,
+            IProgress<FileComparisonProgress> progress,
             uint maxDegreeOfParallelism = 0,
             uint maxWorkerCount = 0,
             CancellationToken cancellationToken = default)
         {
-            _filesCount = 0;
+            filesCount = 0;
             if (!ValidateInput(sourceRoot, targetRoot, fileComparisonMode, out FileComparerWorkerResult result))
                 return result;
 
@@ -32,16 +32,10 @@ namespace JustFileComparerCore.FileComparers
 
             RaiseOnComparisonStarted();
             
-            /*
-            Progress<string> fileSearchProgress = new Progress<string>(FileSearchProgressChanged);
-            var files = FileEnumerator.EnumerateFiles(sourceRoot, "*", maxWorkerCount, fileSearchProgress, cancellationToken);
-            _filesCount = (ulong)files.Count();
-            result.SetFilesCount(_filesCount);*/
-            
             ConcurrentBag<string> files = new ConcurrentBag<string>();
-            await foreach (string file in FileEnumerator.EnumerateFilesAsAsyncEnumerable(sourceRoot, "*", maxWorkerCount, cancellationToken))
+            await foreach (string file in FileEnumerator.EnumerateFilesAsyncStreamed(sourceRoot, "*", maxWorkerCount, cancellationToken))
             {
-                Interlocked.Increment(ref _filesCount);
+                Interlocked.Increment(ref filesCount);
                 files.Add(file);
             }
 
@@ -96,7 +90,7 @@ namespace JustFileComparerCore.FileComparers
 
         private void FileSearchProgressChanged(string file)
         {
-            _filesCount++;
+            filesCount++;
         }
 
         #endregion

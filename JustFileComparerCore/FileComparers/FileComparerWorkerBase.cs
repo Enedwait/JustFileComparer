@@ -4,24 +4,24 @@ namespace JustFileComparerCore.FileComparers
 {
     public interface IFileComparerWorker
     {
-        public event EventHandler OnComparisonStarted;
-        public event EventHandler OnComparisonCompleted;
+        public event EventHandler? OnComparisonStarted;
+        public event EventHandler? OnComparisonCompleted;
     }
 
     public abstract class FileComparerWorkerBase : IFileComparerWorker
     {
-        public event EventHandler OnComparisonStarted;
-        public event EventHandler OnComparisonCompleted;
+        public event EventHandler? OnComparisonStarted;
+        public event EventHandler? OnComparisonCompleted;
 
-        protected ulong _filesCount;
+        protected ulong filesCount;
 
-        public ulong FilesCount => _filesCount;
+        public ulong FilesCount => filesCount;
 
         public abstract Task<FileComparerWorkerResult> CompareDirectoryContentAsync(
             string sourceRoot,
             string targetRoot,
-            FileComparisonMode fileComparisonMode = FileComparisonMode.Size | FileComparisonMode.Hash,
-            IProgress<FileComparisonProgress> progress = null,
+            FileComparisonMode fileComparisonMode,
+            IProgress<FileComparisonProgress> progress,
             uint maxDegreeOfParallelism = 0,
             uint maxWorkerCount = 0,
             CancellationToken cancellationToken = default);
@@ -30,7 +30,7 @@ namespace JustFileComparerCore.FileComparers
 
         protected virtual bool ValidateInput(string sourceRoot, string targetRoot, FileComparisonMode fileComparisonMode, out FileComparerWorkerResult error)
         {
-            error = null;
+            error = new FileComparerWorkerResult();
             if (string.IsNullOrWhiteSpace(sourceRoot)) { error = FileComparerWorkerResult.Error("Source Root should not be empty!"); return false; }
             if (!Directory.Exists(sourceRoot)) { error = FileComparerWorkerResult.Error("Source Root does not exist!"); return false; }
             if (string.IsNullOrWhiteSpace(targetRoot)) { error = FileComparerWorkerResult.Error("Target Root should not be empty!"); return false; }

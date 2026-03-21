@@ -9,13 +9,13 @@ namespace JustFileComparerCore.FileComparers
         public override async Task<FileComparerWorkerResult> CompareDirectoryContentAsync(
             string sourceRoot, 
             string targetRoot, 
-            FileComparisonMode fileComparisonMode = FileComparisonMode.Size | FileComparisonMode.Hash,
-            IProgress<FileComparisonProgress> progress = null,
+            FileComparisonMode fileComparisonMode,
+            IProgress<FileComparisonProgress> progress,
             uint maxDegreeOfParallelism = 0, 
             uint maxWorkerCount = 0, 
             CancellationToken cancellationToken = default)
         {
-            _filesCount = 0;
+            filesCount = 0;
             if (!ValidateInput(sourceRoot, targetRoot, fileComparisonMode, out FileComparerWorkerResult result))
                 return result;
 
@@ -34,7 +34,7 @@ namespace JustFileComparerCore.FileComparers
             try
             {
                 await Parallel.ForEachAsync(
-                    FileEnumerator.EnumerateFilesAsAsyncEnumerable(sourceRoot, "*", maxWorkerCount, cancellationToken),
+                    FileEnumerator.EnumerateFilesAsyncStreamed(sourceRoot, "*", maxWorkerCount, cancellationToken),
                     options,
                     async (filePath, token) =>
                     {
@@ -42,8 +42,8 @@ namespace JustFileComparerCore.FileComparers
 
                         try
                         {
-                            Interlocked.Increment(ref _filesCount);
-                            result.SetFilesCount(_filesCount);
+                            Interlocked.Increment(ref filesCount);
+                            result.SetFilesCount(filesCount);
 
                             FileComparison comparison = await ProcessFile(filePath, sourceRoot, targetRoot, fileComparisonMode, token);
                             if (!token.IsCancellationRequested)
@@ -76,7 +76,7 @@ namespace JustFileComparerCore.FileComparers
             if (cancellationToken.IsCancellationRequested)
                 result.SetCanceled();
 
-            result.SetFilesCount(_filesCount);
+            result.SetFilesCount(filesCount);
 
             RaiseOnComparisonCompleted();
 

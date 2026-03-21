@@ -5,7 +5,7 @@ namespace JustFileComparerCore.Tests
     public sealed class FileComparerTest
     {
         [Fact]
-        public async void AreFilesEqualBySize_SameFile()
+        public async Task AreFilesEqualBySize_SameFile()
         {
             var result = await FileComparer.AreFilesEqualBySizeAsync(@"TestFiles/f1.jpg", @"TestFiles/f1.jpg");
 
@@ -13,7 +13,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualBySize_DifferentFiles()
+        public async Task AreFilesEqualBySize_DifferentFiles()
         {
             var result = await FileComparer.AreFilesEqualBySizeAsync(@"TestFiles/f1.jpg", @"TestFiles/f2.bmp");
 
@@ -21,7 +21,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualByHash_SameFile()
+        public async Task AreFilesEqualByHash_SameFile()
         {
             var result = await FileComparer.AreFilesEqualByHashAsync(@"TestFiles/f1.jpg", @"TestFiles/f1.jpg");
 
@@ -29,7 +29,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualByHash_DifferentFiles()
+        public async Task AreFilesEqualByHash_DifferentFiles()
         {
             var result = await FileComparer.AreFilesEqualByHashAsync(@"TestFiles/f1.jpg", @"TestFiles/f2.bmp");
 
@@ -37,7 +37,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualByBytes_SameFile()
+        public async Task AreFilesEqualByBytes_SameFile()
         {
             var result = await FileComparer.AreFilesEqualByteByByteAsync(@"TestFiles/f1.jpg", @"TestFiles/f1.jpg");
 
@@ -45,7 +45,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualByBytes_DifferentFiles()
+        public async Task AreFilesEqualByBytes_DifferentFiles()
         {
             var result = await FileComparer.AreFilesEqualByteByByteAsync(@"TestFiles/f1.jpg", @"TestFiles/f2.bmp");
 
@@ -53,7 +53,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualBySizeAndHash_SameFile()
+        public async Task AreFilesEqualBySizeAndHash_SameFile()
         {
             var result = await FileComparer.AreFilesEqualBySizeAndHashAsync(@"TestFiles/f1.jpg", @"TestFiles/f1.jpg");
 
@@ -61,7 +61,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqualBySizeAndHash_DifferentFiles()
+        public async Task AreFilesEqualBySizeAndHash_DifferentFiles()
         {
             var result = await FileComparer.AreFilesEqualBySizeAndHashAsync(@"TestFiles/f1.jpg", @"TestFiles/f2.bmp");
 
@@ -69,7 +69,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqual_SameFile()
+        public async Task AreFilesEqual_SameFile()
         {
             var result = await FileComparer.AreFilesEqualAsync(@"TestFiles/f1.jpg", @"TestFiles/f1.jpg");
 
@@ -77,7 +77,7 @@ namespace JustFileComparerCore.Tests
         }
 
         [Fact]
-        public async void AreFilesEqual_DifferentFiles()
+        public async Task AreFilesEqual_DifferentFiles()
         {
             var result = await FileComparer.AreFilesEqualAsync(@"TestFiles/f1.jpg", @"TestFiles/f2.bmp");
 

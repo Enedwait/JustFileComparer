@@ -35,14 +35,17 @@ namespace JustFileComparerCore.FileComparers
 
         #region Single Comparison Methods
 
+        public static async Task<long> GetFileSizeAsync(string filePath) =>
+            await Task.Run(() => new FileInfo(filePath).Length);
+
         public static async Task<bool> AreFilesEqualBySizeAsync(string sourceFilePath, string targetFilePath, CancellationToken cancellationToken = default)
         {
             if (cancellationToken.IsCancellationRequested) return false;
 
-            FileInfo source = new FileInfo(sourceFilePath);
-            FileInfo target = new FileInfo(targetFilePath);
+            long sourceSize = await GetFileSizeAsync(sourceFilePath);
+            long targetSize = await GetFileSizeAsync(targetFilePath);
 
-            return source.Length == target.Length;
+            return sourceSize == targetSize;
         }
 
         public static async Task<bool> AreFilesEqualByHashAsync(string sourceFilePath, string targetFilePath, CancellationToken cancellationToken = default)
@@ -73,7 +76,7 @@ namespace JustFileComparerCore.FileComparers
             {
                 if (cancellationToken.IsCancellationRequested) return false;
 
-                // ToDo: implement more performant option
+                // ToDo: implement more performant and async option
                 if (source.ReadByte() != target.ReadByte())
                     return false;
             }

@@ -8,16 +8,16 @@ namespace JustFileComparerCore.Loggers
     {
         #region Fields
 
-        private string logDirectoryPath;
-        private string logFilePath;
+        private string logDirectoryPath = string.Empty;
+        private string logFilePath = string.Empty;
         private DateTime startedAt;
         private DateTime endedAt;
         private State state;
-        private StreamWriter logWriter;
+        private StreamWriter logWriter = null!;
         private int waitForLogEntry;
         private ConcurrentQueue<string> queue = new ConcurrentQueue<string>();
-        private Task logTask;
-        private CancellationTokenSource cancellationTokenSource;
+        private Task logTask = null!;
+        private CancellationTokenSource cancellationTokenSource = null!;
 
         #endregion
 
@@ -56,7 +56,7 @@ namespace JustFileComparerCore.Loggers
                 Directory.CreateDirectory(logDirectoryPath);
 
             startedAt = DateTime.UtcNow;
-            logFilePath = Path.GetFullPath($"Logs//FileComparisonProgressLog_{startedAt.ToString("u").ConvertToValidFileName()}.log");
+            logFilePath = Path.GetFullPath(Path.Combine(logDirectoryPath, $"FileComparisonProgressLog_{startedAt.ToString("u").ConvertToValidFileName()}.log"));
 
             logWriter = File.AppendText(logFilePath);
             logWriter.AutoFlush = true;
@@ -81,7 +81,7 @@ namespace JustFileComparerCore.Loggers
             {
                 while (true)
                 {
-                    if (queue.TryDequeue(out string log))
+                    if (queue.TryDequeue(out string? log))
                     {
                         try
                         {
@@ -114,7 +114,7 @@ namespace JustFileComparerCore.Loggers
             if (progress.CurrentComparison.Result == FileComparisonResult.Equal) 
                 return;
 
-            LogToQueue($"{progress.CurrentComparison}");
+            await Task.Run(() => LogToQueue($"{progress.CurrentComparison}"));
         }
 
         private void LogToQueue(string log)
@@ -122,7 +122,7 @@ namespace JustFileComparerCore.Loggers
             queue.Enqueue(log);
         }
 
-        public async Task EndLog(FileComparerWorkerResult result = null)
+        public async Task EndLog(FileComparerWorkerResult? result = null)
         {
             if (state != State.Started)
                 return;
@@ -176,11 +176,11 @@ namespace JustFileComparerCore.Loggers
                 {
                     logWriter.Close();
                 }
+
+                state = State.Completed;
             });
 
-            task.Wait();
-
-            state = State.Completed;
+            await task.WaitAsync(CancellationToken.None);
         }
 
         private TimeSpan GetCurrentElapsedTime() => DateTime.UtcNow - startedAt;

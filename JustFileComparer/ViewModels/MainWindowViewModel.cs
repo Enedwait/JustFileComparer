@@ -5,7 +5,6 @@ using JustFileComparerCore.FileComparers;
 using JustFileComparerCore.Helpers;
 using JustFileComparerCore.Loggers;
 using System;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
@@ -16,20 +15,20 @@ namespace JustFileComparer.ViewModels
     {
         #region Fields
 
-        private Timer updateTimer;
-        private CancellationTokenSource _compareFilesCancellationTokenSource;
+        private Timer _updateTimer = null!;
+        private CancellationTokenSource _compareFilesCancellationTokenSource = null!;
         private bool _isProcessing;
         private bool _isCanceled;
-        [ObservableProperty] private string _status;
-        [ObservableProperty] private string _elapsedTime;
+        [ObservableProperty] private string _status = String.Empty;
+        [ObservableProperty] private string _elapsedTime = String.Empty;
         [ObservableProperty] private ulong _totalFilesCount;
         [ObservableProperty] private ulong _totalComparisonsCount;
         [ObservableProperty] private ulong _successfulComparisonsCount;
         [ObservableProperty] private ulong _failedComparisonsCount;
-        private string _sourceRoot;
-        private string _targetRoot;
+        private string _sourceRoot = string.Empty;
+        private string _targetRoot = string.Empty;
         private FileComparisonProgressLogger progressLogger;
-        private FileComparerWorkerBase worker;
+        private FileComparerWorkerBase worker = null!;
         private FileComparisonProgress lastProgress;
 
         #endregion
@@ -116,11 +115,6 @@ namespace JustFileComparer.ViewModels
             DoCompareByHash = true;
 
             ResetInfo();
-#if DEBUG
-            DoCompareByHash = false;
-            SourceRoot = @"U:\";
-            TargetRoot = @"W:\";
-#endif
         }
 
         #endregion
@@ -129,7 +123,7 @@ namespace JustFileComparer.ViewModels
 
         private async Task CompareFiles()
         {
-            var task = Task.Run(async () =>
+            await Task.Run(async () =>
             {
                 Dispatcher.UIThread.Invoke(() =>
                 {
@@ -206,15 +200,15 @@ namespace JustFileComparer.ViewModels
         private void UpdateStatusIfCanCompare()
         {
             if (CanCompareFiles()) UpdateStatus("Ready to compare!");
-            else if ("Ready to compare!".Equals(_status)) UpdateStatus("");
+            else if ("Ready to compare!".Equals(Status)) UpdateStatus("");
         }
 
         private void OnComparisonStarted(object? sender, EventArgs e)
         {
-            updateTimer = new Timer(100);
-            updateTimer.AutoReset = true;
-            updateTimer.Elapsed += (timer, args) => UpdateInfo();
-            updateTimer.Start();
+            _updateTimer = new Timer(100);
+            _updateTimer.AutoReset = true;
+            _updateTimer.Elapsed += (timer, args) => UpdateInfo();
+            _updateTimer.Start();
 
             Dispatcher.UIThread.Invoke(() =>
             {
@@ -224,8 +218,8 @@ namespace JustFileComparer.ViewModels
 
         private void OnComparisonCompleted(object? sender, EventArgs e)
         {
-            updateTimer.Stop();
-            updateTimer = null;
+            _updateTimer.Stop();
+            _updateTimer.Dispose();
 
             Dispatcher.UIThread.Invoke(() =>
             {
