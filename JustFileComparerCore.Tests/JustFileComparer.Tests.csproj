@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\JustFileComparerCore\JustFileComparerCore.csproj" />
+    <ProjectReference Include="..\JustFileComparerCore\JustFileComparer.Model.csproj" />
   </ItemGroup>
 
   <ItemGroup>

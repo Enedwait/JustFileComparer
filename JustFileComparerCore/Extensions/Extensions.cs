@@ -30,6 +30,11 @@
 
         #region ConvertToValidFileName
 
+        /// <summary>
+        /// Converts the given input string into a valid file name.
+        /// </summary>
+        /// <param name="input">input string to be converted.</param>
+        /// <returns>a valid file name.</returns>
         public static string ConvertToValidFileName(this string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "";
@@ -42,6 +47,7 @@
 
         #endregion
 
+        /// <summary> Gets the current timestamp UTC. </summary>
         public static string TimeStampUtc => DateTime.UtcNow.ToString("u").ConvertToValidFileName();
     }
 }

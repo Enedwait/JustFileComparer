@@ -2,6 +2,9 @@
 
 namespace JustFileComparerCore.Tests
 {
+    /// <summary>
+    /// <remarks>These tests are author's system specific and need to be adapted if used on any other system!</remarks>
+    /// </summary>
     public sealed class FileComparerWorkerTests
     {
         private static FileComparisonMode Mode = FileComparisonMode.Size | FileComparisonMode.Hash;

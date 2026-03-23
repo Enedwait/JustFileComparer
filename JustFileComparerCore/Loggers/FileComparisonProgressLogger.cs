@@ -89,7 +89,9 @@ namespace JustFileComparerCore.Loggers
                         }
                         catch (Exception ex)
                         {
+#if DEBUG
                             Console.WriteLine(ex);
+#endif
                         }
                     }
                     else
@@ -102,7 +104,9 @@ namespace JustFileComparerCore.Loggers
             }
             catch (Exception ex)
             {
+#if DEBUG
                 Console.WriteLine(ex);
+#endif
             }
         }
 
@@ -170,7 +174,9 @@ namespace JustFileComparerCore.Loggers
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     Console.WriteLine(ex);
+#endif
                 }
                 finally
                 {

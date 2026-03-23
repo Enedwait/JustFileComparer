@@ -125,7 +125,7 @@ namespace JustFileComparer.ViewModels
         {
             await Task.Run(async () =>
             {
-                Dispatcher.UIThread.Invoke(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     lastProgress = new FileComparisonProgress();
                     IsProcessing = true;
@@ -156,7 +156,7 @@ namespace JustFileComparer.ViewModels
                     await progressLogger.EndLog(result);
                 }
 
-                Dispatcher.UIThread.Invoke(() =>
+                await Dispatcher.UIThread.InvokeAsync(() =>
                 {
                     IsProcessing = false;
                     IsCanceled = false;
@@ -203,25 +203,25 @@ namespace JustFileComparer.ViewModels
             else if ("Ready to compare!".Equals(Status)) UpdateStatus("");
         }
 
-        private void OnComparisonStarted(object? sender, EventArgs e)
+        private async void OnComparisonStarted(object? sender, EventArgs e)
         {
             _updateTimer = new Timer(100);
             _updateTimer.AutoReset = true;
             _updateTimer.Elapsed += (timer, args) => UpdateInfo();
             _updateTimer.Start();
 
-            Dispatcher.UIThread.Invoke(() =>
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 UpdateStatus($"Started");
             });
         }
 
-        private void OnComparisonCompleted(object? sender, EventArgs e)
+        private async void OnComparisonCompleted(object? sender, EventArgs e)
         {
             _updateTimer.Stop();
             _updateTimer.Dispose();
 
-            Dispatcher.UIThread.Invoke(() =>
+            await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 UpdateStatus($"Completed");
                 UpdateInfo();

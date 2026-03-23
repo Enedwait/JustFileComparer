@@ -66,7 +66,9 @@ namespace JustFileComparerCore.FileComparers
                             }
                             catch (Exception ex)
                             {
+#if DEBUG
                                 Console.WriteLine(ex);
+#endif
                             }
                         });
                 }
@@ -76,7 +78,9 @@ namespace JustFileComparerCore.FileComparers
                 }
                 catch (Exception ex)
                 {
+#if DEBUG
                     Console.WriteLine(ex);
+#endif
                 }
             }
 
@@ -86,11 +90,6 @@ namespace JustFileComparerCore.FileComparers
             RaiseOnComparisonCompleted();
 
             return result;
-        }
-
-        private void FileSearchProgressChanged(string file)
-        {
-            filesCount++;
         }
 
         #endregion
